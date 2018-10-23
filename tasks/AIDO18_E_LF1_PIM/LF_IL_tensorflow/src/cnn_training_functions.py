@@ -18,15 +18,20 @@ def load_data(file_path):
     df_img = pd.read_hdf(file_path, key='images', encoding='utf-8')
 
     # extract omega velocities from dataset
-    velocities = df_data['vel_omega'].values
-    velocities = np.reshape(velocities, (-1, 1))
+    velocities_l = df_data['vel_left'].values
+    velocities_l = np.reshape(velocities_l, (-1, 1))
+
+    velocities_r = df_data['vel_right'].values
+    velocities_r = np.reshape(velocities_r, (-1, 1))
+
+    velocities = np.concatenate((velocities_l,velocities_r),axis=1)
 
     # extract images from dataset
     images = df_img['img'][0]
 
-    print('The dataset is loaded: {} images and {} omega velocities.'.format(images.shape[0], velocities.shape[0]))
+    print('The dataset is loaded: {} images and {} left and {} right velocities.'.format(images.shape[0], velocities_l.shape[0],velocities_r.shape[0]))
 
-    if not images.shape[0] == velocities.shape[0]:
+    if not (images.shape[0] == velocities.shape[0]):
         raise ValueError("The number of images and velocities must be the same.")
 
     return velocities, images
@@ -111,7 +116,7 @@ class CNN_training:
             hl_fc_1 = tf.layers.dense(inputs=conv_flat, units=64, activation=tf.nn.relu, name="fc_layer_1")
 
             # add 2nd fully connected layers to predict the driving commands
-            hl_fc_2 = tf.layers.dense(inputs=hl_fc_1, units=1, name="fc_layer_2")
+            hl_fc_2 = tf.layers.dense(inputs=hl_fc_1, units=2, name="fc_layer_2")
 
             return hl_fc_2
 
@@ -169,7 +174,7 @@ class CNN_training:
 
         # define placeholder for the true omega velocities
         # [None: tensor may hold arbitrary num of velocities, number of omega predictions for each image]
-        self.vel_true = tf.placeholder(tf.float16, shape=[None, 1], name="vel_true")
+        self.vel_true = tf.placeholder(tf.float16, shape=[None, 2], name="vel_true")
         self.vel_pred = self.model(self.x)
 
         self.loss = self.loss_function()
@@ -228,8 +233,3 @@ class CNN_training:
         # close summary writer
         train_writer.close()
         test_writer.close()
-
-
-
-
-
