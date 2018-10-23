@@ -272,7 +272,7 @@ def main():
         temp_df = pd.read_hdf(files[i], 'table')
         df = df.append(temp_df, ignore_index=True)
 
-    velocities = df[['vel_v', 'vel_omega']].values
+    velocities = df[['vel_left', 'vel_right']].values
 
     images = df['rgb'].values
 

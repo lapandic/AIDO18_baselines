@@ -41,7 +41,7 @@ def synchronize_data(df_imgs, df_cmds, bag_ID):
     for cmd_index, cmd_time in enumerate(df_cmds['vel_timestamp']):
 
         # we keep only the data for which the duckiebot is moving (we do not want the duckiebot to learn to remain at rest)
-        if ( df_cmds['vel_omega'][cmd_index] != 0) & ( df_cmds['vel_v'][cmd_index] != 0):
+        if ( df_cmds['vel_right'][cmd_index] != 0) & ( df_cmds['vel_left'][cmd_index] != 0):
 
             # find index of image with the closest timestamp to omega velocity's timestamp
             img_index = ( np.abs( df_imgs['img_timestamp'].values - cmd_time ) ).argmin()
@@ -64,8 +64,8 @@ def synchronize_data(df_imgs, df_cmds, bag_ID):
                 temp_data = np.array( [[
                     df_imgs['img_timestamp'][img_index],
                     df_cmds["vel_timestamp"][cmd_index],
-                    df_cmds['vel_v'][cmd_index],
-                    df_cmds['vel_omega'][cmd_index],
+                    df_cmds['vel_left'][cmd_index],
+                    df_cmds['vel_right'][cmd_index],
                     bag_ID
                 ]] )
 
@@ -90,4 +90,3 @@ def synchronize_data(df_imgs, df_cmds, bag_ID):
 
     # return the synchronized data to the main function
     return synch_data, synch_imgs
-

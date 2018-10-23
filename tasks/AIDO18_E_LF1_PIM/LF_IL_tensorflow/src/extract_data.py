@@ -46,7 +46,7 @@ def main():
                 # the duckiebot name can change from one bag file to the other, so define
                 # the topics WITHOUT the duckiebot name in the beginning
                 "/camera_node/image/compressed",
-                "/lane_controller_node/car_cmd"
+                "/wheels_driver_node/wheels_cmd"
                 ]
 
     # define the bags_directory in order to extract the data
@@ -73,7 +73,7 @@ def main():
     # df_all = pd.DataFrame()
 
     first_time = True
-
+    print 'ovdje sam'
     for file in os.listdir(bags_directory):
         if not file.endswith(".bag"):
             continue
@@ -83,7 +83,7 @@ def main():
         bag_ID = file.partition(".bag")[0]
 
         # extract the duckiebot name to complete the definition of the nodes
-        duckiebot_name = file.partition("_")[2].partition(".bag")[0]
+        duckiebot_name = "megabot08"#file.partition("_")[2].partition(".bag")[0]
 
         # complete the topics names with the duckiebot name in the beginning
         ros_topics_temp = copy(ros_topics)
@@ -111,7 +111,7 @@ def main():
 
         # extract the images and car_cmds messages
         ext_images = msgs["/" + duckiebot_name + "/camera_node/image/compressed"].messages
-        ext_car_cmds = msgs["/" + duckiebot_name + "/lane_controller_node/car_cmd"].messages
+        ext_car_cmds = msgs["/" + duckiebot_name + "/wheels_driver_node/wheels_cmd"].messages
 
         # create dataframe with the images and the images' timestamps
         for num, img in enumerate(ext_images):
@@ -147,8 +147,8 @@ def main():
 
             temp_df = pd.DataFrame({
                 'vel_timestamp': [vel_timestamp],
-                'vel_omega': [cmd_msg.omega],
-                'vel_v': [cmd_msg.v]
+                'vel_left': [cmd_msg.vel_left],
+                'vel_right': [cmd_msg.vel_right]
             })
 
             if num == 0:
@@ -170,7 +170,7 @@ def main():
         else:
             synch_data = np.vstack((synch_data, temp_synch_data))
             synch_imgs = np.vstack((synch_imgs, temp_synch_imgs))
-        
+
         print("\nShape of total data: {} , shape of total images: {}\n".format(synch_data.shape, synch_imgs.shape))
 
     print("Synchronization of all data is finished.\n")
@@ -182,8 +182,8 @@ def main():
     df_data_train = pd.DataFrame({
         'img_timestamp': synch_data[:train_size, 0],
         'vel_timestamp': synch_data[:train_size, 1],
-        'vel_v': synch_data[:train_size, 2],
-        'vel_omega': synch_data[:train_size, 3],
+        'vel_left': synch_data[:train_size, 2],
+        'vel_right': synch_data[:train_size, 3],
         'bag_ID': synch_data[:train_size, 4],
     })
 
@@ -196,8 +196,8 @@ def main():
     df_data_test = pd.DataFrame({
         'img_timestamp': synch_data[train_size:, 0],
         'vel_timestamp': synch_data[train_size:, 1],
-        'vel_v': synch_data[train_size:, 2],
-        'vel_omega': synch_data[train_size:, 3],
+        'vel_left': synch_data[train_size:, 2],
+        'vel_right': synch_data[train_size:, 3],
         'bag_ID': synch_data[train_size:, 4],
     })
 
