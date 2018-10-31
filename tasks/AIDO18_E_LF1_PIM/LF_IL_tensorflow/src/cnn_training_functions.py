@@ -165,7 +165,7 @@ class CNN_training:
         man_loss_summary.value.add(tag='Loss', simple_value=None)
 
         # define placeholder variable for input images (each images is a row vector [1, 4608 = 48x96x1])
-        self.x = tf.placeholder(tf.float16, shape=[None, 48 * 96], name='x')
+        self.x = tf.placeholder(tf.float16, shape=[None, 48 * 96 * 3], name='x')
 
         # define placeholder for the true omega velocities
         # [None: tensor may hold arbitrary num of velocities, number of omega predictions for each image]
