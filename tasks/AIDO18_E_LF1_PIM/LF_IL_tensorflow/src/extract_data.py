@@ -83,7 +83,7 @@ def main():
         bag_ID = file.partition(".bag")[0]
 
         # extract the duckiebot name to complete the definition of the nodes
-        duckiebot_name = file.partition("_")[2].partition(".bag")[0]
+        duckiebot_name = "megabot08"#file.partition("_")[2].partition(".bag")[0]
 
         # complete the topics names with the duckiebot name in the beginning
         ros_topics_temp = copy(ros_topics)
@@ -170,7 +170,7 @@ def main():
         else:
             synch_data = np.vstack((synch_data, temp_synch_data))
             synch_imgs = np.vstack((synch_imgs, temp_synch_imgs))
-        
+
         print("\nShape of total data: {} , shape of total images: {}\n".format(synch_data.shape, synch_imgs.shape))
 
     print("Synchronization of all data is finished.\n")

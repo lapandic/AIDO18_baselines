@@ -90,7 +90,7 @@ class CNN_training:
 
             # define the 4-d tensor expected by TensorFlow
             # [-1: arbitrary num of images, img_height, img_width, num_channels]
-            x_img = tf.reshape(x, [-1, 48, 96, 1])
+            x_img = tf.reshape(x, [-1, 48, 96, 3])
 
             # define 1st convolutional layer
             hl_conv_1 = tf.layers.conv2d(x_img, kernel_size=5, filters=2, padding="valid",
@@ -228,8 +228,3 @@ class CNN_training:
         # close summary writer
         train_writer.close()
         test_writer.close()
-
-
-
-
-

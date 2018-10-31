@@ -15,7 +15,7 @@ def image_preprocessing(image):
     new_img = image[int(480/3):, :, :]
 
     # transform the color image to grayscale
-    new_img = cv2.cvtColor(new_img[:, :, :], cv2.COLOR_RGB2GRAY)
+    # new_img = cv2.cvtColor(new_img[:, :, :], cv2.COLOR_RGB2GRAY)
 
     # resize the image from 320x640 to 48x96
     new_img = cv2.resize( new_img, (image_final_width, image_final_height) ) # this returns image 48x96 and not 96x48
@@ -90,4 +90,3 @@ def synchronize_data(df_imgs, df_cmds, bag_ID):
 
     # return the synchronized data to the main function
     return synch_data, synch_imgs
-
