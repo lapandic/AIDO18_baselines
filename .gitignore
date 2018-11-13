@@ -1,3 +1,6 @@
 __pycache__/
-venv_AIDO18/
+BL_venv/
+bag_files/
+data_old/
+data/
 .idea
