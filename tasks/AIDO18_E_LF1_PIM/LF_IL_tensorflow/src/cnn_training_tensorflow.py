@@ -26,6 +26,9 @@ def main():
     # define total epochs (e.g 1000, 5000, 10000)
     epochs = 1000
 
+    # define number of backsteps
+    num_of_backsteps = 2
+
     # read train data
     print('Reading train dataset')
     train_velocities, train_images = load_data(file_path_train)
@@ -35,7 +38,7 @@ def main():
     test_velocities, test_images = load_data(file_path_test)
 
     # construct model name based on the hyper parameters
-    model_name = form_model_name(batch_size, learning_rate, optimizer, epochs)
+    model_name = form_model_name(batch_size, learning_rate, optimizer, epochs,num_of_backsteps)
 
     print('Starting training for {} model.'.format(model_name))
 
@@ -43,7 +46,7 @@ def main():
     start_time = time.time()
 
     # train model
-    cnn_train = CNN_training(batch_size, epochs, learning_rate, optimizer)
+    cnn_train = CNN_training(batch_size, epochs, learning_rate, optimizer,num_of_backsteps)
     cnn_train.training(model_name, train_velocities, train_images, test_velocities, test_images)
 
     # calculate total training time in minutes

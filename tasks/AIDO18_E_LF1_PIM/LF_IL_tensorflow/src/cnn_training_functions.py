@@ -32,7 +32,7 @@ def load_data(file_path):
     return velocities, images
 
 
-def form_model_name(batch_size, lr, optimizer, epochs):
+def form_model_name(batch_size, lr, optimizer, epochs,num_of_backsteps):
     '''
     Creates name of model as a string, based on the defined hyperparameters used in training
 
@@ -40,20 +40,22 @@ def form_model_name(batch_size, lr, optimizer, epochs):
     :param lr: learning rate
     :param optimizer: optimizer (e.g. GDS, Adam )
     :param epochs: number of epochs
+    :param num_of_backsteps: number of backsteps
     :return: name of model as a string
     '''
 
-    return "batch={},lr={},optimizer={},epochs={}".format(batch_size, lr, optimizer, epochs)
+    return "batch={},lr={},optimizer={},epochs={},backsteps={}".format(batch_size, lr, optimizer, epochs,num_of_backsteps)
 
 
 class CNN_training:
 
-    def __init__(self, batch, epochs, learning_rate, optimizer):
+    def __init__(self, batch, epochs, learning_rate, optimizer,num_of_backsteps):
 
         self.batch_size = batch
         self.epochs = epochs
         self.learning_rate = learning_rate
         self.optimizer = optimizer
+        self.num_of_backsteps = num_of_backsteps
 
     def backpropagation(self):
         '''
@@ -90,30 +92,46 @@ class CNN_training:
 
             # define the 4-d tensor expected by TensorFlow
             # [-1: arbitrary num of images, img_height, img_width, num_channels]
-            x_img = tf.reshape(x, [-1, 48, 96, 3])
+            x_img = tf.reshape(x, [-1, 48*self.num_of_backsteps, 96, 3])
 
-            # define 1st convolutional layer
-            hl_conv_1 = tf.layers.conv2d(x_img, kernel_size=5, filters=2, padding="valid",
-                                         activation=tf.nn.relu, name="conv_layer_1")
+            x_array = tf.split(x_img, num_or_size_splits=self.num_of_backsteps,axis=1)
 
-            max_pool_1 = tf.layers.max_pooling2d(hl_conv_1, pool_size=2, strides=2)
+            hl_conv_1 = []
+            max_pool_1 = []
+            hl_conv_2 = []
+            max_pool_2 = []
+            conv_flat = []
+            hl_fc_1 = []
+            hl_fc_2 = []
 
-            # define 2nd convolutional layer
-            hl_conv_2 = tf.layers.conv2d(max_pool_1, kernel_size=5, filters=8, padding="valid",
-                                         activation=tf.nn.relu, name="conv_layer_2")
+            for i in range(len(x_array)):
 
-            max_pool_2 = tf.layers.max_pooling2d(hl_conv_2, pool_size=2, strides=2)
+                # define 1st convolutional layer
+                hl_conv_1.append(tf.layers.conv2d(x_array[i], kernel_size=5, filters=2, padding="valid",
+                                             activation=tf.nn.relu, name="conv_layer_1_"+str(i)))
 
-            # flatten tensor to connect it with the fully connected layers
-            conv_flat = tf.layers.flatten(max_pool_2)
+                max_pool_1.append(tf.layers.max_pooling2d(hl_conv_1[i], pool_size=2, strides=2))
 
-            # add 1st fully connected layers to the neural network
-            hl_fc_1 = tf.layers.dense(inputs=conv_flat, units=64, activation=tf.nn.relu, name="fc_layer_1")
+                # define 2nd convolutional layer
+                hl_conv_2.append(tf.layers.conv2d(max_pool_1[i], kernel_size=5, filters=8, padding="valid",
+                                             activation=tf.nn.relu, name="conv_layer_2_"+str(i)))
 
-            # add 2nd fully connected layers to predict the driving commands
-            hl_fc_2 = tf.layers.dense(inputs=hl_fc_1, units=1, name="fc_layer_2")
+                max_pool_2.append(tf.layers.max_pooling2d(hl_conv_2[i], pool_size=2, strides=2))
 
-            return hl_fc_2
+                # flatten tensor to connect it with the fully connected layers
+                conv_flat.append(tf.layers.flatten(max_pool_2[i]))
+
+                # add 1st fully connected layers to the neural network
+                hl_fc_1.append(tf.layers.dense(inputs=conv_flat[i], units=64, activation=tf.nn.relu, name="fc_layer_1"+str(i)))
+
+                # add 2nd fully connected layers to predict the driving commands
+                hl_fc_2.append(tf.layers.dense(inputs=hl_fc_1[i], units=1, name="fc_layer_2"+str(i)))
+
+            commands_stack = tf.stack(hl_fc_2)
+
+            fc = tf.layers.dense(inputs=commands_stack, units=1, name="fc_layer_out")
+
+            return fc
 
     def epoch_iteration(self, data_size, x_data, y_data, mode):
         '''
@@ -165,7 +183,7 @@ class CNN_training:
         man_loss_summary.value.add(tag='Loss', simple_value=None)
 
         # define placeholder variable for input images (each images is a row vector [1, 4608 = 48x96x1])
-        self.x = tf.placeholder(tf.float16, shape=[None, 48 * 96 * 3], name='x')
+        self.x = tf.placeholder(tf.float16, shape=[None, 48 * 96 * 3*self.num_of_backsteps], name='x')
 
         # define placeholder for the true omega velocities
         # [None: tensor may hold arbitrary num of velocities, number of omega predictions for each image]
