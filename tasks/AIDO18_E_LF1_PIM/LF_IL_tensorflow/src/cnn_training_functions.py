@@ -4,6 +4,7 @@ import tensorflow as tf
 import numpy as np
 import pandas as pd
 import os
+import datetime
 
 def load_data(file_path):
     '''
@@ -44,7 +45,8 @@ def form_model_name(batch_size, lr, optimizer, epochs,num_of_backsteps):
     :return: name of model as a string
     '''
 
-    return "batch={},lr={},optimizer={},epochs={},backsteps={}".format(batch_size, lr, optimizer, epochs,num_of_backsteps)
+    #return "batch={},lr={},optimizer={},epochs={},backsteps={}".format(batch_size, lr, optimizer, epochs,num_of_backsteps)
+    return "datetime={},backsteps={}".format(datetime.datetime.now().strftime("%y%m%d%H%M"),num_of_backsteps)
 
 
 class CNN_training:
@@ -92,46 +94,30 @@ class CNN_training:
 
             # define the 4-d tensor expected by TensorFlow
             # [-1: arbitrary num of images, img_height, img_width, num_channels]
-            x_img = tf.reshape(x, [-1, 48*self.num_of_backsteps, 96, 3])
+            x_img = tf.reshape(x, [-1, 48, 96, 1])
 
-            x_array = tf.split(x_img, num_or_size_splits=self.num_of_backsteps,axis=1)
+            # define 1st convolutional layer
+            hl_conv_1 = tf.layers.conv2d(x_img, kernel_size=5, filters=2, padding="valid",
+                                         activation=tf.nn.relu, name="conv_layer_1")
 
-            hl_conv_1 = []
-            max_pool_1 = []
-            hl_conv_2 = []
-            max_pool_2 = []
-            conv_flat = []
-            hl_fc_1 = []
-            hl_fc_2 = []
+            max_pool_1 = tf.layers.max_pooling2d(hl_conv_1, pool_size=2, strides=2)
 
-            for i in range(len(x_array)):
+            # define 2nd convolutional layer
+            hl_conv_2 = tf.layers.conv2d(max_pool_1, kernel_size=5, filters=8, padding="valid",
+                                         activation=tf.nn.relu, name="conv_layer_2")
 
-                # define 1st convolutional layer
-                hl_conv_1.append(tf.layers.conv2d(x_array[i], kernel_size=5, filters=2, padding="valid",
-                                             activation=tf.nn.relu, name="conv_layer_1_"+str(i)))
+            max_pool_2 = tf.layers.max_pooling2d(hl_conv_2, pool_size=2, strides=2)
 
-                max_pool_1.append(tf.layers.max_pooling2d(hl_conv_1[i], pool_size=2, strides=2))
+            # flatten tensor to connect it with the fully connected layers
+            conv_flat = tf.layers.flatten(max_pool_2)
 
-                # define 2nd convolutional layer
-                hl_conv_2.append(tf.layers.conv2d(max_pool_1[i], kernel_size=5, filters=8, padding="valid",
-                                             activation=tf.nn.relu, name="conv_layer_2_"+str(i)))
+            # add 1st fully connected layers to the neural network
+            hl_fc_1 = tf.layers.dense(inputs=conv_flat, units=64, activation=tf.nn.relu, name="fc_layer_1")
 
-                max_pool_2.append(tf.layers.max_pooling2d(hl_conv_2[i], pool_size=2, strides=2))
+            # add 2nd fully connected layers to predict the driving commands
+            hl_fc_2 = tf.layers.dense(inputs=hl_fc_1, units=1, name="fc_layer_2")
 
-                # flatten tensor to connect it with the fully connected layers
-                conv_flat.append(tf.layers.flatten(max_pool_2[i]))
-
-                # add 1st fully connected layers to the neural network
-                hl_fc_1.append(tf.layers.dense(inputs=conv_flat[i], units=64, activation=tf.nn.relu, name="fc_layer_1"+str(i)))
-
-                # add 2nd fully connected layers to predict the driving commands
-                hl_fc_2.append(tf.layers.dense(inputs=hl_fc_1[i], units=1, name="fc_layer_2"+str(i)))
-
-            commands_stack = tf.stack(hl_fc_2)
-
-            fc = tf.layers.dense(inputs=commands_stack, units=1, name="fc_layer_out")
-
-            return fc
+            return hl_fc_2
 
     def epoch_iteration(self, data_size, x_data, y_data, mode):
         '''

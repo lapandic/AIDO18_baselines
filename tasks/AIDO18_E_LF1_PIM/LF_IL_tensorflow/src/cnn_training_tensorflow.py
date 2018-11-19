@@ -27,7 +27,7 @@ def main():
     epochs = 1000
 
     # define number of backsteps
-    num_of_backsteps = 2
+    num_of_backsteps = 1
 
     # read train data
     print('Reading train dataset')
