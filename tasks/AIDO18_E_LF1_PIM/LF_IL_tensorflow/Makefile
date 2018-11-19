@@ -5,6 +5,8 @@ USERNAME = megaduck
 DUCKIEBOT = megabot08
 PASSWORD = megacity
 
+DIRECTORY = test
+
 # Makefile to structure work on the AI-DO baselines.
 #
 # - install: Installs dependencies need to perform reinforcement learning
@@ -33,8 +35,8 @@ learn:
 
 build-image:
 				. $(VIRTUALENV)/bin/activate; \
-                python src/freeze_graph.py; \
-                docker build --tag duckietown/il-baseline-tensorflow:$(AG_VERSION) .;
+                python src/freeze_graph.py -d $(DIRECTORY); \
+                # docker build --tag duckietown/il-baseline-tensorflow:$(AG_VERSION) .;
 
 evaluate-sim-local:
 				AGENT_VERSION=$(AG_VERSION); \
